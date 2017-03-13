@@ -1,0 +1,22 @@
+#
+#
+:global ISODateTime do={
+
+	:local date [/system clock get date ];
+	:local time [/system clock get time ];
+
+	# mar/13/2017
+	:local day [:pick $date 4 6 ];
+	:local month [:pick $date 0 3 ];
+	:local year [:pick $date 7 11 ];
+	#
+	:local months [:toarray "jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec"];
+	:local m [:pick ( ( [:find $months $month -1 ] + 101) . "") 1 3]
+	#
+
+	:local dtISO  ($year . "-" . $m . "-" . $day . "T" . $time);
+
+	#:put $dtISO
+	:return $dtISO;
+
+};

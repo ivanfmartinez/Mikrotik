@@ -1,0 +1,50 @@
+# Based on 
+#  https://forum.mikrotik.com/viewtopic.php?t=55772#p457568
+## Merge-sort a simple (non-associative) array:
+##   NOTE: This only works if each array item can
+##         be compared using the '<' operator.
+/system script environment remove [ find where name="SortList" ];
+
+:global SortListCompareValues do={
+    return ($1 < $2);
+}
+
+:global SortList do={
+  :global SortList;
+  :global SortListCompareValues;
+
+  :local out [:toarray $1];
+  :local l [:len $out];
+
+  :if ($l>1) do={
+    ## Split the list in two, recursively sort, then merge results
+
+    ## Pick split point index:
+    :local s ($l/2);
+
+    ## Recursively sort each half-list:
+    :local a [$SortList [:pick $out 0 $s] ];
+    :local b [$SortList [:pick $out $s $l] ];
+
+    ## Merge results:
+    :set out [:toarray ""];
+    :set l [:len $b];
+    :local s 0;       ## Use $s as index into array $b
+    :foreach i in=$a do={
+      :local j [:pick $b $s];
+      :while ($s<$l && [$SortListCompareValues $j $i]) do={
+        :set out ($out,$j);
+        :set s ($s+1);
+        :set j [:pick $b $s];
+      };
+      :set out ($out,$i);
+    };
+    :while ($s<$l) do={
+      :set out ($out,[:pick $b $s]);
+      :set s ($s+1);
+    };
+  };
+  :return $out;
+};
+
+
