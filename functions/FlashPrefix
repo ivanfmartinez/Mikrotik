@@ -1,0 +1,16 @@
+
+
+#
+# Adjust filename including /fash prefix when router have /flash disk
+:global FlashPrefix do={
+        if ([:len [/file find type=disk name=flash]] > 0) do={
+                if ([:pick $1 0 1] = "/") do={
+                        :return ( "/flash" . $1);
+                } else {
+                        :return ( "flash/" . $1);
+                }
+        } else={
+                :return $1;
+        }
+}
+

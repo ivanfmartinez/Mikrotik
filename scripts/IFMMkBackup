@@ -1,19 +1,18 @@
 # Number of backup files to keep
 # Each backup will generate 2 files (.backup and .rsc)
-:local MaxBkFiles 10
+:global MaxBkFiles
+if ([:len $MaxBkFiles] = 0) do={
+ 	:global MaxBkFiles 10
+}
 
-/system script run IFMMkDateFunctions
-/system script run IFMMkStringFunctions
-/system script run IFMMkListFunctions
-
-:global ISODateTime
-:global SafeFileName
-:global FlashPrefix
-:global SortList
+##USE_FUNCTION ISODateTime
+##USE_FUNCTION SafeFileName
+##USE_FUNCTION FlashPrefix
+##USE_FUNCTION SortList
 
 # Compare only the digits in the values... AS the digits are an timestamp will work fine
 :global SortListCompareValues do={
-    :global DigitsOnly
+##USE_FUNCTION DigitsOnly
 
     :return ([:tonum [$DigitsOnly $1]] < [:tonum [$DigitsOnly $2]]);
 }

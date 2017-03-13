@@ -1,0 +1,18 @@
+#
+# Replace characters in string
+# $1 = string
+# $2 = character to be replaced
+# $3 = replacement character
+# :return updated string
+:global ReplaceAll do={
+        :local tmp $1;
+        :local old $2;
+        :local new $3;
+
+        :while ([:find $tmp $old -1] > 0) do={         
+                :set tmp ([:pick $tmp 0 [:find $tmp $old -1]] . $new . [:pick $tmp ([:find $tmp $old -1] + 1) [:len $tmp ] ]) ;
+        }
+
+        :return $tmp;
+}
+
