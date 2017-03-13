@@ -35,8 +35,8 @@
 :local removeCount ( [:len $backups] - $MaxBkFiles )
 :if ($removeCount > 0) do={
     :for i from=1 to=$removeCount do={
-        :log info message="Removing old backup file : $bk"
         :local bk [:pick $backups $i]
+        :log info message="Removing old backup file : $bk"
         /file remove [find where name=$bk]
      }
 }
