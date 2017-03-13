@@ -96,6 +96,7 @@ cat >> $FUNCTIONS_FILE <<__EOF__
 
 if ("\$IFMMkFunctionsHash" != "$HASH") do={
         :global IFMMkFunctionsHash "$HASH"
+        :log info "loading IFMMkFunctions definitions"
 __EOF__
 sort $FUNCTION_LIST | uniq | while read func 
 do
@@ -113,6 +114,13 @@ cat >> $FUNCTIONS_FILE <<__EOF__
 
 __EOF__
 
-add_file 'policy=read,write ' IFMMkFunctions $FUNCTIONS_FILE 0
+add_file 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
+
+cat <<__EOF__
+
+# Automaticaly load functions on startup
+/system scheduler add name=IFMMkFunctions start-time=startup on-event="/system script run IFMMkFunctions" policy=read,write,test,policy
+
+__EOF__
 
 rm -f $FUNCTIONS_FILE $FUNCTION_LIST
