@@ -21,23 +21,26 @@ if ([:len $MaxBkFiles] = 0) do={
 :local backupFN [$FlashPrefix ("bk-" . $backupId) ]
 
 :local backups [/file find where name~[$FlashPrefix "bk-*" ]]
-# Replace internal index with file names...
-:for i from=0 to=([:len $backups] - 1) do={
-    :local bk [:pick $backups $i]
-    :local name [/file get $bk name]
-    if ($i = 0) do= {
-        :set backups (  $name , [:pick $backups 1 [:len $backups] ] )
-    } else={
-        :set backups ( [:pick $backups 0 $i] , $name , [:pick $backups ($i + 1) [:len $backups] ] )
-    }
-}
-:local removeCount ( [:len $backups] - $MaxBkFiles )
-:if ($removeCount > 0) do={
-    :for i from=1 to=$removeCount do={
-        :local bk [:pick $backups $i]
-        :log info message="Removing old backup file : $bk"
-        /file remove [find where name=$bk]
-     }
+if ([:len $backups] > $MaxBkFiles) do={
+	# Replace internal index with file names...
+	:for i from=0 to=([:len $backups] - 1) do={
+	    :local bk [:pick $backups $i]
+	    :local name [/file get $bk name]
+	    if ($i = 0) do= {
+	        :set backups (  $name , [:pick $backups 1 [:len $backups] ] )
+	    } else={
+	        :set backups ( [:pick $backups 0 $i] , $name , [:pick $backups ($i + 1) [:len $backups] ] )
+	    }
+	}
+	:set backups [$SortList $backups]
+	:local removeCount ( [:len $backups] - $MaxBkFiles )
+	:if ($removeCount > 0) do={
+		:for i from=0 to=($removeCount - 1) do={
+			:local bk [:pick $backups $i]
+			:log info message="Removing old backup file : $bk"
+			/file remove [find where name=$bk]
+		}
+	}
 }
 
 
