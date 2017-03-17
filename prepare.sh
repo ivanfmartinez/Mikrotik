@@ -81,12 +81,12 @@ check_dependencies
 cd functions
 if [ $ALL_FUNCTIONS -eq 1 ]
 then
-	ls -1 > $FUNCTION_LIST
+	ls -1  > $FUNCTION_LIST
 fi
-HASH=$(sort $FUNCTION_LIST  | uniq | xargs cat | sha1sum | awk '{print $1}')
+HASH=$(sort $FUNCTION_LIST | grep -E -i "^[a-z0-9]+\$" | uniq | xargs cat | sha1sum | awk '{print $1}')
 cd ..
 
-cat >> $FUNCTIONS_FILE <<__EOF__ 
+cat >> $FUNCTIONS_FILE  <<__EOF__ 
 # https://github.com/ivanfmartinez/Mikrotik
 # generated : $(date) 
 # functions included = $(sort $FUNCTION_LIST | uniq | tr "\n" " ")
@@ -98,12 +98,14 @@ if ("\$IFMMkFunctionsHash" != "$HASH") do={
         :global IFMMkFunctionsHash "$HASH"
         :log info "loading IFMMkFunctions definitions"
 __EOF__
-sort $FUNCTION_LIST | uniq | while read func 
+
+sort $FUNCTION_LIST | grep -E -i "^[a-z0-9]+\$" | uniq | while read func 
 do
 	echo "# $func " >> $FUNCTIONS_FILE
 	cat functions/$func >> $FUNCTIONS_FILE
 	echo "" >> $FUNCTIONS_FILE
 done
+
 cat >> $FUNCTIONS_FILE <<__EOF__ 
 
 	if ([:len [/system script find name=IFMMkDefs]] = 1) do={
