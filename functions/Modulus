@@ -1,0 +1,9 @@
+#
+# Get Modulus of division
+:global Modulus do={
+	:local a $1;
+	:local n $2;
+	
+	:return ($a - ( ($a / $n) * $n));
+};
+
