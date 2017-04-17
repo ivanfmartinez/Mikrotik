@@ -48,5 +48,5 @@ if ([:len $backups] > $BkMaxFiles) do={
 
 
 /system backup save name="$backupFN"
-:execute "/export $BkExportOptions file='$backupFN'" 
+:execute "/export $BkExportOptions file=\"$backupFN\"" 
 
