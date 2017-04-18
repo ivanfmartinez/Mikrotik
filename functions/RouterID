@@ -1,0 +1,11 @@
+#
+# Router Identification 
+# MODEL/SERIAL
+:global RouterID do={
+	if ( [/system routerboard get routerboard] = true) do={
+		:return ( [$ReplaceAll [ /system routerboard get model ] " " "-"] . "/" . [/system routerboard get serial ] )
+	} else={
+#TODO get more information to identify the virtual router...
+		:return ( "NOT_RB/SYS_ID_" . [ /system license get system-id ] )
+	}
+};
