@@ -11,6 +11,23 @@ then
 	shift
 fi
 
+FUNCTIONS_DIR="functions"
+TMP_FUNCTIONS_DIR="/tmp/ifm.mk.functions.d.$$"
+#TODO accept extra functions directories....
+if [ "$EXTRA_FUNCTIONS_DIRS" != "" ]
+then
+	rm -Rf $TMP_FUNCTIONS_DIR
+	mkdir -p $TMP_FUNCTIONS_DIR
+	for dir in $FUNCTIONS_DIR $EXTRA_FUNCTIONS_DIRS
+	do
+		if [ -d $dir ]
+		then
+			cp $dir/* $TMP_FUNCTIONS_DIR
+		fi
+	done
+	FUNCTIONS_DIR=$TMP_FUNCTIONS_DIR
+fi
+
 FUNCTION_LIST="/tmp/ifm.mk.functions_list.$$"
 FUNCTIONS_FILE="/tmp/ifm.mk.functions.$$"
 rm -f $FUNCTION_LIST $FUNCTIONS_FILE
@@ -50,7 +67,7 @@ function check_dependencies() {
 	local CNT_START=$(cat $FUNCTION_LIST | wc -l)
 	sort $FUNCTION_LIST | uniq | while read func
 	do
-		grep "^##USE_FUNCTION" functions/$func | cut -f 2 -d " " | while read depen
+		grep "^##USE_FUNCTION" ${FUNCTIONS_DIR}/$func | cut -f 2 -d " " | while read depen
 		do
 			grep -q "^$depen\$" $FUNCTION_LIST
 			if [ $? -ne 0 ]
@@ -73,12 +90,15 @@ then
 	add_files "" $*
 else
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkBackup scripts/IFMMkBackup 1
-#	add_files "" IFMMkDateFunctions IFMMkStringFunctions IFMMkListFunctions
 fi
 
-check_dependencies
 
-cd functions
+if [ $ALL_FUNCTIONS -ne 1 ]
+then
+	check_dependencies
+fi
+
+cd $FUNCTIONS_DIR
 if [ $ALL_FUNCTIONS -eq 1 ]
 then
 	ls -1  > $FUNCTION_LIST
@@ -102,7 +122,7 @@ __EOF__
 sort $FUNCTION_LIST | grep -E -i "^[a-z0-9]+\$" | uniq | while read func 
 do
 	echo "# $func " >> $FUNCTIONS_FILE
-	cat functions/$func >> $FUNCTIONS_FILE
+	cat ${FUNCTIONS_DIR}/$func >> $FUNCTIONS_FILE
 	echo "" >> $FUNCTIONS_FILE
 done
 
@@ -125,4 +145,5 @@ cat <<__EOF__
 
 __EOF__
 
-rm -f $FUNCTIONS_FILE $FUNCTION_LIST
+rm -f $FUNCTIONS_FILE $FUNCTION_LIST 
+rm -Rf $TMP_FUNCTIONS_DIR
