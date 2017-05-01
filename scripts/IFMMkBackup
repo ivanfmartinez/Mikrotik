@@ -17,7 +17,7 @@ if ([:len $MaxBkFiles] = 0) do={
     :return ([:tonum [$DigitsOnly $1]] < [:tonum [$DigitsOnly $2]]);
 }
 
-:local backupId [$SafeFileName ([/system identity get name] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
+:local backupId [$SafeFileName ([/system identity get name] . "-" . [/system resource get version ] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
 :local backupFN [$FlashPrefix ("bk-" . $backupId) ]
 
 :local backups [/file find where name~[$FlashPrefix "bk-*" ]]
