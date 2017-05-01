@@ -1,8 +1,13 @@
 # Number of backup files to keep
 # Each backup will generate 2 files (.backup and .rsc)
-:global MaxBkFiles
-if ([:len $MaxBkFiles] = 0) do={
- 	:global MaxBkFiles 10
+:global BkMaxFiles
+:global BkExportOptions
+if ([:len $BkMaxFiles] = 0) do={
+ 	:global BkMaxFiles 10
+}
+if ([:len $BkExportOptions] = 0) do={
+# As the export is not protected by password does not include passwords
+ 	:global BkExportOptions "hide-sensitive"
 }
 
 ##USE_FUNCTION ISODateTime
@@ -21,7 +26,7 @@ if ([:len $MaxBkFiles] = 0) do={
 :local backupFN [$FlashPrefix ("bk-" . $backupId) ]
 
 :local backups [/file find where name~[$FlashPrefix "bk-*" ]]
-if ([:len $backups] > $MaxBkFiles) do={
+if ([:len $backups] > $BkMaxFiles) do={
 	# Replace internal index with file names...
 	:for i from=0 to=([:len $backups] - 1) do={
 	    :local bk [:pick $backups $i]
@@ -33,17 +38,15 @@ if ([:len $backups] > $MaxBkFiles) do={
 	    }
 	}
 	:set backups [$SortList $backups]
-	:local removeCount ( [:len $backups] - $MaxBkFiles )
-	:if ($removeCount > 0) do={
-		:for i from=0 to=($removeCount - 1) do={
-			:local bk [:pick $backups $i]
-			:log info message="Removing old backup file : $bk"
-			/file remove [find where name=$bk]
-		}
+	:local removeCount ( [:len $backups] - $BkMaxFiles )
+	:for i from=0 to=($removeCount - 1) do={
+		:local bk [:pick $backups $i]
+		:log info message="Removing old backup file : $bk"
+		/file remove [find where name=$bk]
 	}
 }
 
 
 /system backup save name="$backupFN"
-/export file="$backupFN"
+:execute "/export $BkExportOptions file=\"$backupFN\"" 
 
