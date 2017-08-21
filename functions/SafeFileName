@@ -3,5 +3,6 @@
 # TODO check more characters...
 :global SafeFileName do={
 ##USE_FUNCTION ReplaceAll
-        :return [$ReplaceAll [$ReplaceAll [$ReplaceAll $1 ":" "-"] " " "_"] "/" "_"]
+        :return [$ReplaceAll [$ReplaceAll [$ReplaceAll [$ReplaceAll [$ReplaceAll $1 ":" "-"] " " "_"] "/" "_"] "(" "_" ] ")" "_" ]
 }
+
