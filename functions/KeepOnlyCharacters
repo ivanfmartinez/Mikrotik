@@ -1,0 +1,24 @@
+#
+# Keep only the specified characters
+# $1 = string
+# $2 = characters to keep
+# :return updated string
+:global KeepOnlyCharacters do={
+        :local original $1;
+        :local valids $2;
+        :local new "";
+
+	:for i from=0 to=([:len $original] -1) do={
+		:local char [:pick $original $i]
+		:local idx [:find $valids $char -1]
+#		:put ( $char . " " . $idx )
+		:if ($idx >= 0) do={
+			:set new ( $new . $char )
+		}
+	}
+
+        :return $new;
+}
+
+
+
