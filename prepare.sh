@@ -143,6 +143,8 @@ cat <<__EOF__
 # Automaticaly load functions on startup
 /system scheduler add name=IFMMkFunctions start-time=startup on-event="/system script run IFMMkFunctions" policy=read,write,test,policy
 
+/system script run IFMMkFunctions
+
 __EOF__
 
 rm -f $FUNCTIONS_FILE $FUNCTION_LIST 
