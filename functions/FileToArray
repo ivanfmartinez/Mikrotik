@@ -1,0 +1,46 @@
+# Read file and put contents in an array
+# RouterOS supports only 4K in each variable
+# This function will skip empty lines and begining with #
+#
+# $1 - Filename
+# $2 - optional array to add to
+#
+# return new array with lines or lines added to array $2
+# the function check first if file exists and return empty when it does not exist 
+:global FileToArray do={
+# based on https://forum.mikrotik.com/viewtopic.php?t=93050#p464218
+      :local filename $1
+      :local lines
+      :if ([:typeof $2] = "array") do={
+         :set lines $2
+      }
+
+      :if ([:len [/file find name=$filename]] != 1) do={
+         return $lines
+      }
+      :local content [/file get [/file find name=$filename] contents] ;
+      :local contentLen [:len $content];
+
+
+      :local lineEnd 0;
+      :local line "";
+      :local lastEnd 0;
+
+      :while ($lineEnd < $contentLen) do={
+# depending on file type (linux/windows), "\n" might need to be "\r\n"
+           :set lineEnd [:find $content "\n" $lastEnd];
+# if there are no more line breaks, set this to be the last one
+           :if ([:len $lineEnd] = 0) do={
+               :set lineEnd $contentLen;
+           }
+# get the current line based on the last line break and next one
+           :set line [:pick $content $lastEnd $lineEnd];
+# depending on "\n" or "\r\n", this will be 1 or 2 accordingly
+          :set lastEnd ($lineEnd + 1);
+# don't process blank lines
+          :if (($line != "\r") && ([:pick $line 0 1] != "#")) do={
+              :set lines ($lines, $line)
+          }
+      } 
+      return $lines
+}
