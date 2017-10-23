@@ -1,0 +1,36 @@
+#
+# Remove older files 
+# Uses SortList to order files and determine older 
+# (filename must contain timestamp)
+#
+# $1 - file mask
+# $2 - maxFiles to keep
+:global RemoveOldFiles do={
+	:local mask "$1"
+	:local maxFiles $2
+
+	:global SortList
+	:global FlashPrefix
+
+	:local files [/file find where name~[$FlashPrefix $mask ]]
+	if ([:len $files] > $maxFiles) do={
+		# Replace internal index with file names...
+		:for i from=0 to=([:len $files] - 1) do={
+		    :local file [:pick $files $i]
+		    :local name [/file get $file name]
+		    if ($i = 0) do= {
+		        :set files (  $name , [:pick $files 1 [:len $files] ] )
+		    } else={
+		        :set files ( [:pick $files 0 $i] , $name , [:pick $files ($i + 1) [:len $files] ] )
+		    }
+		}
+		:set files [$SortList $files]
+		:local removeCount ( [:len $files] - $maxFiles )
+		:for i from=0 to=($removeCount - 1) do={
+			:local file [:pick $files $i]
+			:log info message="Removing old file : $file"
+			/file remove [find where name=$file]
+		}
+	}
+
+}

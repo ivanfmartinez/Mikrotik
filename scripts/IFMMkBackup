@@ -14,6 +14,7 @@ if ([:len $BkExportOptions] = 0) do={
 ##USE_FUNCTION SafeFileName
 ##USE_FUNCTION FlashPrefix
 ##USE_FUNCTION SortList
+##USE_FUNCTION RemoveOldFiles
 
 # Compare only the digits in the values... AS the digits are an timestamp will work fine
 :global SortListCompareValues do={
@@ -25,27 +26,7 @@ if ([:len $BkExportOptions] = 0) do={
 :local backupId [$SafeFileName ([/system identity get name] . "-" . [/system resource get version ] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
 :local backupFN [$FlashPrefix ("bk-" . $backupId) ]
 
-:local backups [/file find where name~[$FlashPrefix "bk-*" ]]
-if ([:len $backups] > $BkMaxFiles) do={
-	# Replace internal index with file names...
-	:for i from=0 to=([:len $backups] - 1) do={
-	    :local bk [:pick $backups $i]
-	    :local name [/file get $bk name]
-	    if ($i = 0) do= {
-	        :set backups (  $name , [:pick $backups 1 [:len $backups] ] )
-	    } else={
-	        :set backups ( [:pick $backups 0 $i] , $name , [:pick $backups ($i + 1) [:len $backups] ] )
-	    }
-	}
-	:set backups [$SortList $backups]
-	:local removeCount ( [:len $backups] - $BkMaxFiles )
-	:for i from=0 to=($removeCount - 1) do={
-		:local bk [:pick $backups $i]
-		:log info message="Removing old backup file : $bk"
-		/file remove [find where name=$bk]
-	}
-}
-
+[$RemoveOldFiles "bk-*" $BkMaxFiles]
 
 /system backup save name="$backupFN"
 :execute "/export $BkExportOptions file=\"$backupFN\"" 

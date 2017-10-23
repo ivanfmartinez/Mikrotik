@@ -38,6 +38,7 @@ function add_file() {
 	local FILE="$3"
 	local EXEC_FUNCTIONS="$4"
 	echo ""
+	echo ":put \"adding file $SCRIPT\""
 	echo ":do {/system script add name="$SCRIPT"} on-error={}"
 	echo -n "/system script set "$SCRIPT" $PERMS source=\""
 	if [ "$EXEC_FUNCTIONS" = "1" ]
@@ -90,6 +91,7 @@ then
 	add_files "" $*
 else
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkBackup scripts/IFMMkBackup 1
+	add_file "policy=read,write,sensitive,test,password,policy" IFMMkStats scripts/IFMMkStats 1
 fi
 
 
@@ -140,9 +142,11 @@ add_file 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
 
 cat <<__EOF__
 
+:put "Adding scheduler"
 # Automaticaly load functions on startup
 /system scheduler add name=IFMMkFunctions start-time=startup on-event="/system script run IFMMkFunctions" policy=read,write,test,policy
 
+:put "Executing IFMMkFunctions"
 /system script run IFMMkFunctions
 
 __EOF__

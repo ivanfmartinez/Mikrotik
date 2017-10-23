@@ -1,0 +1,19 @@
+##USE_FUNCTION ISODateTime
+##USE_FUNCTION SafeFileName
+##USE_FUNCTION FlashPrefix
+##USE_FUNCTION RemoveOldFiles
+##USE_FUNCTION SortList
+
+# Compare only the digits in the values... AS the digits are an timestamp will work fine
+:global SortListCompareValues do={
+##USE_FUNCTION DigitsOnly
+
+    :return ([:tonum [$DigitsOnly $1]] < [:tonum [$DigitsOnly $2]]);
+}
+
+[$RemoveOldFiles "int-stat-*" 120]
+
+:local statId [$SafeFileName ([/system identity get name] . "-" . [/system resource get version ] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
+:local statFN [$FlashPrefix ("int-stat-" . $statId) ]
+
+/interface print stats file=$statFN
