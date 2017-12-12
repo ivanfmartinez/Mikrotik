@@ -92,6 +92,7 @@ then
 else
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkBackup scripts/IFMMkBackup 1
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkStats scripts/IFMMkStats 1
+	add_file "policy=read,write,sensitive,test,password,policy" IFMCheckNetwatch scripts/IFMCheckNetwatch 0
 fi
 
 
@@ -142,9 +143,11 @@ add_file 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
 
 cat <<__EOF__
 
-:put "Adding scheduler"
+:put "Adding schedulers"
 # Automaticaly load functions on startup
-/system scheduler add name=IFMMkFunctions start-time=startup on-event="/system script run IFMMkFunctions" policy=read,write,test,policy
+/system scheduler add name=IFMMkFunctions    start-time=startup 		on-event="/system script run IFMMkFunctions" policy=read,write,test,policy
+/system scheduler add name=IFMMkBackup       start-time=02:00:00 interval=1w 	on-event="/system script run IFMMkBackup" policy=read,write,password,sensitive,test,policy
+/system scheduler add name=IFMCheckNetwatch  start-time=02:00:00 interval=5m 	on-event="/system script run IFMCheckNetwatch" policy=read,write,password,sensitive,test,policy
 
 :put "Executing IFMMkFunctions"
 /system script run IFMMkFunctions

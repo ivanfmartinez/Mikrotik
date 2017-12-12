@@ -1,0 +1,27 @@
+#
+# Check for changes in netwatch status and register in log
+#
+
+
+:local watches [/tool netwatch find where disabled=no]
+:global netwatchStatus
+
+:local status ""
+:if ([:len $watches] > 0) do={
+    :for i from=0 to=([:len $watches] -1) do={
+       :local watch [:pick $watches $i]
+       :local host [/tool netwatch get $watch host]
+       :local state [/tool netwatch get $watch status]
+       :local since [/tool netwatch get $watch since]
+       :local extra ""
+       :set status ("$status" .  "$host-$state($since) ")
+    }
+}
+
+#:put $status
+:if ( "$status" != "$netwatchStatus" ) do={
+     :log info "**** NETWATCH STATUS CHANGED FROM |$netwatchStatus| TO |$status|"
+}
+:set netwatchStatus "$status"
+
+
