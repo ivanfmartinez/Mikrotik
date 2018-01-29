@@ -93,6 +93,7 @@ else
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkBackup scripts/IFMMkBackup 1
 	add_file "policy=read,write,sensitive,test,password,policy" IFMMkStats scripts/IFMMkStats 1
 	add_file "policy=read,write,sensitive,test,password,policy" IFMCheckNetwatch scripts/IFMCheckNetwatch 0
+	add_file "policy=read,write,sensitive,test,password,policy" IFMCheckLoginFailures scripts/IFMCheckLoginFailures 0
 fi
 
 
