@@ -1,9 +1,20 @@
 # Check for log entries trying to login with invalid users
 # put the source address in a BlackList access list
+
 # Be carefull and have rules for safe addresses before using this blacklist
+# When a valid login via webfig expires sometimes routeros shows also a login failure, so be carefull
+# when you connect via ssh and let the connection  timeout it also shows a login failure
 
 :local BLNAME "BRUTEFORCE"
-:local BLTIMEOUT "1d"
+#timeout to address be in the blacklist....
+:local BLINVALIDTIMEOUT "1d"
+:local BLVALIDTIMEOUT "1d"
+# minimum number of failures to include in the blacklist
+:local INVALIDLIMIT 3
+:local VALIDLIMIT 5
+
+:local counterInvalid { "0"=0 }
+:local counterValid { "0"=0 }
 
 # login failure for user xxx from 10.0.0.76 via ssh
 :foreach message in=[/log print as-value where message~"^login failure"] do={
@@ -13,23 +24,44 @@
         :local userPos [:find $token " user " -1]
         :local fromPos [:find $token " from " -1]
         :local viaPos  [:find $token " via " -1 ]
-#        :put "$fromPos $viaPos"
+#       :put "$fromPos $viaPos"
         if ( ($userPos >= 0) && ( $fromPos >= 0 )  &&  ( $viaPos >= 0 ) ) do={
             :local user [:pick $token ($userPos + 6) $fromPos]
             :local ip [:pick $token ($fromPos + 6) $viaPos]
-#            :put "$fromPos $viaPos $user $ip"
+            :local via [:pick $token ($viaPos + 5) [:len $token] ]
+#           :put "$fromPos $viaPos $user $ip $via"
             if ([:len [/user find where name="$user"]] = 0) do={
-                 # user not found
-                 if ([:find $ip "." -1] >= 1) do={
-                     :do { /ip firewall address-list add list="$BLNAME" address="$ip" timeout="$BLTIMEOUT" } on-error={  }
-                 } else={
-                     :do { /ipv6 firewall address-list add list="$BLNAME" address="$ip" timeout="$BLTIMEOUT" } on-error={  }
-                 }
+#		:put "user not found : $user"
+		:set ($counterInvalid->$ip) ($counterInvalid->$ip + 1)
             } else={
-                 # user found
+# 		:put "user found : $user"
+ 		:set ($counterValid->$ip) ($counterValid->$ip + 1)
             }
         }
    }
 }
 
+#:put $counterInvalid
+#:put $counterValid
+
+:foreach k,v in=$counterInvalid do={
+#	:put "$k $v"
+        if ( $v >= $INVALIDLIMIT ) do={
+            if ([:find $k "." -1] >= 1) do={
+                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT" } on-error={  }
+            } else={
+                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT" } on-error={  }
+            }
+	}
+}
+:foreach k,v in=$counterValid do={
+#	:put "$k $v"
+        if ( $v >= $VALIDLIMIT ) do={
+            if ([:find $k "." -1] >= 1) do={
+                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT" } on-error={  }
+            } else={
+                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT" } on-error={  }
+            }
+	}
+}
 
