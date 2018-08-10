@@ -10,8 +10,8 @@
 :local BLINVALIDTIMEOUT "1d"
 :local BLVALIDTIMEOUT "1d"
 # minimum number of failures to include in the blacklist
-:local INVALIDLIMIT 3
-:local VALIDLIMIT 5
+:local INVALIDLIMIT 2
+:local VALIDLIMIT 3
 
 :local counterInvalid { "0"=0 }
 :local counterValid { "0"=0 }
@@ -31,10 +31,10 @@
             :local via [:pick $token ($viaPos + 5) [:len $token] ]
 #           :put "$fromPos $viaPos $user $ip $via"
             if ([:len [/user find where name="$user"]] = 0) do={
-#		:put "user not found : $user"
+#		:put "user not found : $user - $ip"
 		:set ($counterInvalid->$ip) ($counterInvalid->$ip + 1)
             } else={
-# 		:put "user found : $user"
+# 		:put "user found : $user - $ip"
  		:set ($counterValid->$ip) ($counterValid->$ip + 1)
             }
         }
@@ -48,19 +48,20 @@
 #	:put "$k $v"
         if ( $v >= $INVALIDLIMIT ) do={
             if ([:find $k "." -1] >= 1) do={
-                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT" } on-error={  }
+                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT"  comment="Check Login Failures Invalid User"} on-error={  }
             } else={
-                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT" } on-error={  }
+                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLINVALIDTIMEOUT"  comment="Check Login Failures Invalid User"} on-error={  }
             }
 	}
 }
+
 :foreach k,v in=$counterValid do={
 #	:put "$k $v"
         if ( $v >= $VALIDLIMIT ) do={
             if ([:find $k "." -1] >= 1) do={
-                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT" } on-error={  }
+                 :do { /ip firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT"  comment="Check Login Failures"} on-error={  }
             } else={
-                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT" } on-error={  }
+                 :do { /ipv6 firewall address-list add list="$BLNAME" address="$k" timeout="$BLVALIDTIMEOUT"  comment="Check Login Failures"} on-error={  }
             }
 	}
 }
