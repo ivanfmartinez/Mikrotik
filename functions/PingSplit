@@ -1,0 +1,25 @@
+
+# Ping test and return if success
+# $1 - ping host 
+# $2 - total ping counter (if not success will try this number of pings)
+# $3 - split ping counter (each ping command will use this number)
+# return 0 - no response 
+#        n - number of valid ping responses from the last ping command
+#
+# eg. $PingSplit 8.8.8.8 300 10
+#         will try 10 pings each time until 300 if 8.8.8.8 not responding 
+
+:global PingSplit do={
+        :local host $1
+        :local count $2
+        :local splitCount $3
+        :while ($count > 0) do={
+             :set count ($count - $splitCount)
+             :local cnt [/ping address=$host count=$splitCount]
+             :if ( $cnt > 0 ) do={
+                 :return $cnt
+             }
+           
+        }
+        :return 0
+}
