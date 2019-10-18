@@ -2,7 +2,7 @@
 if [ ! -f deploy/install.rsc ]
 then
 	mkdir -p deploy
-	bash ./prepare.sh -all > deploy/install.rsc
+	bash ./prepare.sh -all -fn deploy/IFMMkFunctions > deploy/install.rsc
 fi
 
 while [ "$1" != "" ]

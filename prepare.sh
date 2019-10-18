@@ -5,11 +5,21 @@
 #
 
 ALL_FUNCTIONS=0
-if [ "$1" = "-all" ]
-then
-	ALL_FUNCTIONS=1
+FUNCTIONS_FILE="/tmp/ifm.mk.functions.$$"
+RM_FUNCTIONS_FILE=1
+while [ "$1" != "" ]
+do
+	if [ "$1" = "-all" ]
+	then
+		ALL_FUNCTIONS=1
+	elif [ "$1" = "-fn" ] && [ "$2" != "" ]
+	then
+		FUNCTIONS_FILE="$(realpath $2)"
+		RM_FUNCTIONS_FILE=0
+		shift
+	fi
 	shift
-fi
+done
 
 FUNCTIONS_DIR="functions"
 TMP_FUNCTIONS_DIR="/tmp/ifm.mk.functions.d.$$"
@@ -29,7 +39,6 @@ then
 fi
 
 FUNCTION_LIST="/tmp/ifm.mk.functions_list.$$"
-FUNCTIONS_FILE="/tmp/ifm.mk.functions.$$"
 rm -f $FUNCTION_LIST $FUNCTIONS_FILE
 
 function add_file() {
@@ -155,5 +164,9 @@ cat <<__EOF__
 
 __EOF__
 
-rm -f $FUNCTIONS_FILE $FUNCTION_LIST 
+if [ "$RM_FUNCTIONS_FILE" = "1" ]
+then
+    rm -f $FUNCTIONS_FILE 
+fi
+rm -f $FUNCTION_LIST 
 rm -Rf $TMP_FUNCTIONS_DIR
