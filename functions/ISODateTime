@@ -1,9 +1,18 @@
 # Return the current date in ISO format (without time-zone)
+# or the specified date/time
 #
 :global ISODateTime do={
 
-	:local date [/system clock get date ];
-	:local time [/system clock get time ];
+        :local date
+        :local time
+        :if ("$1" = "") do={
+                :set date [/system clock get date ];
+                :set time [/system clock get time ];
+        } else={
+                :local p1 [:find "$1" " "];
+                :set date [:pick "$1" 0 $p1];
+                :set time [:pick "$1" ($p1+1) ($p1 + 9)];
+        }
 
 	# mar/13/2017
 	:local day [:pick $date 4 6 ];
