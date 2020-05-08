@@ -1,0 +1,102 @@
+#
+#  Update dynamic DNS hostname with current IP of interface
+#  Also update static dns name and ipsec policy if configured
+#
+
+:global UpdateDynDNS do={
+	# Define User Variables
+	:local ddnsuser $1
+	:local ddnspass $2
+	:local ddnshost $3
+
+	# define service variables
+	:local ddnsinterface $4
+	:local serverurl $5
+	:local myipurl $6
+	:local isnat $7
+	:local resolveserver $8
+	:local forceddnsupdate $9
+
+	# Define Global Variables
+	:global ddnslastiparr
+
+	#define local variables
+	:local ddnsip
+	:local resolveip
+	:local srcaddress
+
+	:set srcaddress "0.0.0.0"
+	:if ([ :typeof $ddnslastiparr ] != "array" ) do={ :set ddnslastiparr ({}) }
+	:local ddnslastip ($ddnslastiparr->"$ddnsinterface")
+	:if ([ :typeof $ddnslastip ] = nil ) do={ :set ddnslastip "0.0.0.0" }
+	:if ([ :len "$ddnslastip" ] = 0 ) do={ :set ddnslastip "0.0.0.1" }
+	:put "DDNS Last IP : |$ddnslastip|"
+
+	:if ($forceddnsupdate = 1) do={
+	   :set resolveip "0.0.0.0"
+	} else={
+	# Check for current ip in DNS
+	   :do {
+	      :set resolveip [/resolve server=$resolveserver $ddnshost ]
+	   } on-error= { :set resolveip "Unable to resolve $ddnshost" };
+	}
+	#:put ("Resolve IP |$resolveip|")
+
+	# Grab the first current IP address on that interface, it came as IP/PREFIX.
+	:set ddnsip [ /ip address get [:pick [/ip address find interface=$ddnsinterface disabled=no] 0 1 ] address ]
+
+	#:put ("Interface address " . $ddnsip)
+
+	# Did we get an IP address to compare?
+	:if ([ :typeof $ddnsip ] = nil ) do={
+	   :log info ("DynDNS: No ip address present on " . $ddnsinterface . ", please check.")
+	} else={
+	#remove prefix
+	  :set ddnsip [:pick "$ddnsip" 0 [:find "$ddnsip" "/"] ]
+	  :set srcaddress $ddnsip
+	#:put ("Interface IP " . $ddnsip)
+
+	# Update static localname if defined
+	  /ip dns static;
+	  :foreach di in [find name="$ddnshost" ] do={
+	    :if ([get $di address] != $ddnsip) do={
+	       /ip dns static set $di address=$ddnsip
+	    }
+	  }
+	#
+	# Update ipsec policy when comment have WAN_SOURCE_ADDRESS_INTERFACENAME
+	#
+	  /ip ipsec policy;
+	  :foreach di in [find comment ~ "WAN_SOURCE_ADDRESS_$ddnsinterface"] do={
+	#     :put ($di . [get $di comment] . $ddnsip) 
+	     :local fulladdr ($ddnsip . "/32")
+	     :if ([get $di src-address] != $fulladdr) do={
+		/ip ipsec policy set $di src-address=$fulladdr
+	     }
+	  }
+
+	  :if ( ("$isnat" = "1") || ([:pick $ddnsip 0 8] = "192.168.") || ([:pick $ddnsip 0 3] = "10.") ) do= {
+	       :if ("$myipurl" != "") do={
+		   :local result [/tool fetch url="$myipurl" src-address=$srcaddress as-value output=user]
+		   :set ddnsip ($result->"data")   
+	       } else={
+		   :set ddnsip "0.0.0.0"
+	       }
+	  }
+
+	  :if ( ($ddnsip != $resolveip) || ($ddnsip != $ddnslastip) ) do={
+	    :log info "DynDNS: $ddnshost Sending UPDATE! IP=$ddnsip LAST=$ddnslastip RESOLVE=$resolveip"
+	    :put  "DynDNS: Sending UPDATE! IP=$ddnsip LAST=$ddnslastip RESOLVE=$resolveip $ddnshost"
+	    :local str ( serverurl . "?hostname=$ddnshost&myip=$ddnsip&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG")
+	#   :local ddnssystem ("mt-" . [/system package get system version] )
+	    :local result [/tool fetch url="$str" src-address=$srcaddress user=$ddnsuser password=$ddnspass as-value output=user]
+	    :put $result
+	    :log info "DynDNS: $ddnshost $result"
+	    :delay 1
+	    :set ($ddnslastiparr->"$ddnsinterface") "$ddnsip" 
+	 }
+	}
+
+
+}
+
