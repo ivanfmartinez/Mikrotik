@@ -53,12 +53,14 @@ function mk_add_script() {
 	then
 		echo ""
 		echo ":put \"adding script $SCRIPT from ${FILE}\""
-		echo ":do {/system script add name=\"$SCRIPT\" source=\"X\" } on-error={}"
 		local FIND_OPTS=""
+		local EXISTS_MSG=""
 		if [ "$OVERRIDE" = "0" ]
 		then
-			FIND_OPTS="source=\"X\""	
+			FIND_OPTS="source=\"X\""
+			EXISTS_MSG=":put \"script $SCRIPT already exists and override disabled\""
 		fi
+		echo ":do {/system script add name=\"$SCRIPT\" source=\"X\" } on-error={ $EXISTS_MSG }"
 		echo -n "/system script set [ find name=\"$SCRIPT\" $FIND_OPTS ] $PERMS source=\""
 		if [ "$EXEC_FUNCTIONS" = "1" ]
 		then
