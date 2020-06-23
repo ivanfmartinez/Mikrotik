@@ -5,6 +5,7 @@
 #
 
 ALL_FUNCTIONS=0
+DEFS_OVERRIDE=${DEFS_OVERRIDE:-0}
 FUNCTIONS_FILE="/tmp/ifm.mk.functions.$$"
 RM_FUNCTIONS_FILE=1
 while [ "$1" != "" ]
@@ -40,33 +41,46 @@ fi
 
 FUNCTION_LIST="/tmp/ifm.mk.functions_list.$$"
 rm -f $FUNCTION_LIST $FUNCTIONS_FILE
+touch $FUNCTION_LIST
 
-function add_file() {
+function mk_add_script() {
 	local PERMS="$1"
 	local SCRIPT="$2"
 	local FILE="$3"
 	local EXEC_FUNCTIONS="$4"
-	echo ""
-	echo ":put \"adding file $SCRIPT\""
-	echo ":do {/system script add name="$SCRIPT"} on-error={}"
-	echo -n "/system script set "$SCRIPT" $PERMS source=\""
-	if [ "$EXEC_FUNCTIONS" = "1" ]
+	local OVERRIDE="$5"
+	if [ -f "${FILE}" ]
 	then
-		echo -n "/system script run IFMMkFunctions\n" 
+		echo ""
+		echo ":put \"adding script $SCRIPT from ${FILE}\""
+		echo ":do {/system script add name=\"$SCRIPT\" source=\"X\" } on-error={}"
+		local FIND_OPTS=""
+		if [ "$OVERRIDE" = "0" ]
+		then
+			FIND_OPTS="source=\"X\""	
+		fi
+		echo -n "/system script set [ find name=\"$SCRIPT\" $FIND_OPTS ] $PERMS source=\""
+		if [ "$EXEC_FUNCTIONS" = "1" ]
+		then
+			echo -n "/system script run IFMMkFunctions\n" 
+		fi
+		if [ "$FUNCTION_LIST" != "" ] && [ -f "$FUNCTION_LIST" ]
+		then
+			grep "^##USE_FUNCTION" "${FILE}" | cut -f 2 -d " " >> $FUNCTION_LIST
+		fi
+		cat "${FILE}" | sed -e 's/\(["\$?]\)/\\\1/g' | sed -e 's/$/\\n/' | sed -e 's/##USE_FUNCTION/:global/' | tr -d '\n'
+		echo "\""	
 	fi
-	grep "^##USE_FUNCTION" ${FILE} | cut -f 2 -d " " >> $FUNCTION_LIST
-	cat $FILE | sed -e 's/\(["\$?]\)/\\\1/g' | sed -e 's/$/\\n/' | sed -e 's/##USE_FUNCTION/:global/' | tr -d '\n'
-	echo "\""	
 }
 
-function add_files() {
+function mk_add_scripts() {
 	local PERMS="$1"
 	shift
 	for fn in $*
 	do
 		if [ -f $fn ]
 		then
-			add_file "$PERMS" $fn $fn
+			mk_add_script "$PERMS" "$fn" "$fn" 0 1
 		else
 			echo "# $fn not found"
 		fi
@@ -97,12 +111,14 @@ function check_dependencies() {
 
 if [ "$1" != "" ]
 then
-	add_files "" $*
+	mk_add_scripts "" $*
 else
-	add_file "policy=read,write,sensitive,test,password,policy" IFMMkBackup scripts/IFMMkBackup 1
-	add_file "policy=read,write,sensitive,test,password,policy" IFMMkStats scripts/IFMMkStats 1
-	add_file "policy=read,write,sensitive,test,password,policy" IFMCheckNetwatch scripts/IFMCheckNetwatch 0
-	add_file "policy=read,write,sensitive,test,password,policy" IFMCheckLoginFailures scripts/IFMCheckLoginFailures 0
+	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMMkBackup scripts/IFMMkBackup 1 1 
+	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMMkStats scripts/IFMMkStats 1 1 
+	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckNetwatch scripts/IFMCheckNetwatch 0 1
+	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckLoginFailures scripts/IFMCheckLoginFailures 0 1
+	# IFMMkDefs will have definitions which will persist on reboots
+	mk_add_script "policy=read,write,sensitive,test,password,policy" IFMMkDefs scripts/IFMMkDefs 0 $DEFS_OVERRIDE
 fi
 
 
@@ -149,7 +165,7 @@ cat >> $FUNCTIONS_FILE <<__EOF__
 
 __EOF__
 
-add_file 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
+mk_add_script 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
 
 cat <<__EOF__
 
