@@ -3,6 +3,8 @@
 :global BkMaxFiles
 :global BkExportOptions
 :global BackupUploadUrl
+:global BackupUploadUser
+:global BackupUploadPassword
 # Backup URL can be configured in IFMMkDefs :
 #  :global BackupUploadUrl "sftp://server.domain:2222/"
 
@@ -33,20 +35,35 @@ if ([:len $BkExportOptions] = 0) do={
 [$RemoveOldFiles "bk-*" $BkMaxFiles]
 
 /system backup save name="$backupFN"
-# To use dynamic parameters must use :execute
-:execute "/export $BkExportOptions file=\"$backupFN\"" 
-# Wait for backup finish as it appers to run in background
+# To use dynamic parameters must use :execute , but its not working on some devices and does not give error message
+# And v6.47 are not executing export command with "not enough permissions" error
+# using the on-error the script will continue if export does not work
+:do {
+	if ("$BkExportOptions" = "hide-sensitive") do={
+		/export hide-sensitive file="$backupFN"
+	} else={
+		:execute "/export $BkExportOptions file=\"$backupFN\"" 
+	}
+} on-error={ :put "Error executing export command" }
+# Wait for backup finish as it appers to run in background in some devices...
 :delay 10
 
 # Requires a server without authentication (using the source IP as id)
 :if ([:len $BackupUploadUrl] > 0) do={
 
+	if ([:len $BackupUploadUser] = 0) do={
+	 	:global BackupUploadUser "mikrotik"
+	}
+	if ([:len $BackupUploadPassword] = 0) do={
+	 	:global BackupUploadPassword "password"
+	}
+
         :local fn  ("$backupFN" . ".backup")
-	:local sftpurl ($BackupUploadUrl . $fn)
-	/tool fetch url="$sftpurl" src-path="$fn" user=any password=any  upload=yes
+	:local backupurl ($BackupUploadUrl . $fn)
+	/tool fetch url="$backupurl" src-path="$fn" user="$BackupUploadUser" password="$BackupUploadPassword"  upload=yes
 
         :local fn  ("$backupFN" . ".rsc")
-	:local sftpurl ($BackupUploadUrl . $fn)
-	/tool fetch url="$sftpurl" src-path="$fn" user=any password=any  upload=yes
+	:local backupurl ($BackupUploadUrl . $fn)
+	/tool fetch url="$backupurl" src-path="$fn" user="$BackupUploadUser" password="$BackupUploadPassword"  upload=yes
 
 }
