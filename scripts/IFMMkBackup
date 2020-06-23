@@ -3,8 +3,8 @@
 :global BkMaxFiles
 :global BkExportOptions
 :global BackupUploadUrl
-# SFTP URL can be configured as 
-#  /system script environment set BackupUploadUrl value="sftp://server.domain:2222/"
+# Backup URL can be configured in IFMMkDefs :
+#  :global BackupUploadUrl "sftp://server.domain:2222/"
 
 if ([:len $BkMaxFiles] = 0) do={
  	:global BkMaxFiles 10
