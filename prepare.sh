@@ -120,7 +120,7 @@ else
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckNetwatch scripts/IFMCheckNetwatch 0 1
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckLoginFailures scripts/IFMCheckLoginFailures 0 1
 	# IFMMkDefs will have definitions which will persist on reboots
-	mk_add_script "policy=read,write,sensitive,test,password,policy" IFMMkDefs scripts/IFMMkDefs 0 $DEFS_OVERRIDE
+	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMMkDefs scripts/IFMMkDefs 0 $DEFS_OVERRIDE
 fi
 
 
@@ -167,7 +167,7 @@ cat >> $FUNCTIONS_FILE <<__EOF__
 
 __EOF__
 
-mk_add_script 'policy=read,write,test ' IFMMkFunctions $FUNCTIONS_FILE 0
+mk_add_script 'policy=read,write,test dont-require-permissions=yes' IFMMkFunctions $FUNCTIONS_FILE 0
 
 cat <<__EOF__
 
