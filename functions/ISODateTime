@@ -5,11 +5,13 @@
 
         :local date
         :local time
-        :if ("$1" = "") do={
+	:local dtISO
+        :if ([:len "$1"] < 11) do={
                 :set date [/system clock get date ];
                 :set time [/system clock get time ];
         } else={
-                :local p1 [:find "$1" " "];
+		# "mmm/dd/yyyy hh:mm:ss"
+                :local p1 [:find "$1 " " "];
                 :set date [:pick "$1" 0 $p1];
                 :set time [:pick "$1" ($p1+1) ($p1 + 9)];
         }
@@ -23,9 +25,12 @@
 	:local m [:pick ( ( [:find $months $month -1 ] + 101) . "") 1 3]
 	#
 
-	:local dtISO  ($year . "-" . $m . "-" . $day . "T" . $time);
+	if ([:len "$time"] > 0) do={
+		:set dtISO  ($year . "-" . $m . "-" . $day . "T" . $time);
+	} else={
+		:set dtISO  ($year . "-" . $m . "-" . $day );
+	}
 
-	#:put $dtISO
 	:return $dtISO;
 
 };
