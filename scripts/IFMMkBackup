@@ -2,6 +2,10 @@
 # Each backup will generate 2 files (.backup and .rsc)
 :global BkMaxFiles
 :global BkExportOptions
+:global BackupUploadUrl
+# SFTP URL can be configured as 
+#  /system script environment set BackupUploadUrl value="sftp://server.domain:2222/"
+
 if ([:len $BkMaxFiles] = 0) do={
  	:global BkMaxFiles 10
 }
@@ -29,5 +33,20 @@ if ([:len $BkExportOptions] = 0) do={
 [$RemoveOldFiles "bk-*" $BkMaxFiles]
 
 /system backup save name="$backupFN"
+# To use dynamic parameters must use :execute
 :execute "/export $BkExportOptions file=\"$backupFN\"" 
+# Wait for backup finish as it appers to run in background
+:delay 10
 
+# Requires a server without authentication (using the source IP as id)
+:if ([:len $BackupUploadUrl] > 0) do={
+
+        :local fn  ("$backupFN" . ".backup")
+	:local sftpurl ($BackupUploadUrl . $fn)
+	/tool fetch url="$sftpurl" src-path="$fn" user=any password=any  upload=yes
+
+        :local fn  ("$backupFN" . ".rsc")
+	:local sftpurl ($BackupUploadUrl . $fn)
+	/tool fetch url="$sftpurl" src-path="$fn" user=any password=any  upload=yes
+
+}

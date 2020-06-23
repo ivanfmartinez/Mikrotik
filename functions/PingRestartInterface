@@ -1,0 +1,27 @@
+# Ping host and if not responding disable and enable interface
+# Keep pinging until it returns responding
+# Used with netwatch for some tunnels that stop working and return after disable/enable
+#
+# $PingRestartInterface 1.1.1.1 30 tunnel-interface 120
+
+:global PingRestartInterface do={
+	:local host $1
+        :local sleepDisable $2
+	:local interface $3
+        :local sleepAfter $4
+        :local okCount $5
+
+        :global PingSplit
+
+	:local respCnt [$PingSplit $host 20 $okCount]
+        :while ($respCnt != $okCount) do={
+                :log info "Disabling interface $interface for $sleepDisable seconds"
+		/interface set [find name=$interface] disabled=yes
+		:delay $sleepDisable
+		/interface set [find name=$interface] disabled=no
+		:delay $sleepAfter
+		:set respCnt [$PingSplit $host 20 $okCount]
+	}
+       
+        :return 0
+}

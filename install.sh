@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "$1" = "FORCE" ]
+then
+	shift
+	rm deploy/install.rsc
+fi
 if [ ! -f deploy/install.rsc ]
 then
 	mkdir -p deploy
