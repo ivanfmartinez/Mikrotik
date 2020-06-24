@@ -30,19 +30,22 @@ if ([:len $BkExportOptions] = 0) do={
 }
 
 :local backupId [$SafeFileName ([/system identity get name] . "-" . [/system resource get version ] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
-:local backupFN [$FlashPrefix ("bk-" . $backupId) ]
+:local backupFN ( "bk-" . "$backupId" )
+:local backupFullFN [$FlashPrefix ("$backupFN") ]
+:put $backupFN
+:put $backupFullFN
 
 [$RemoveOldFiles "bk-*" $BkMaxFiles]
 
-/system backup save name="$backupFN"
+/system backup save name="$backupFullFN"
 # To use dynamic parameters must use :execute , but its not working on some devices and does not give error message
 # And v6.47 are not executing export command with "not enough permissions" error
 # using the on-error the script will continue if export does not work
 :do {
 	if ("$BkExportOptions" = "hide-sensitive") do={
-		/export hide-sensitive file="$backupFN"
+		/export hide-sensitive file="$backupFullFN"
 	} else={
-		:execute "/export $BkExportOptions file=\"$backupFN\"" 
+		:execute "/export $BkExportOptions file=\"$backupFullFN\"" 
 	}
 } on-error={ :put "Error executing export command" }
 # Wait for backup finish as it appers to run in background in some devices...
@@ -58,12 +61,12 @@ if ([:len $BkExportOptions] = 0) do={
 	 	:global BackupUploadPassword "password"
 	}
 
-        :local fn  ("$backupFN" . ".backup")
-	:local backupurl ($BackupUploadUrl . $fn)
+        :local fn  ("$backupFullFN" . ".backup")
+	:local backupurl ("$BackupUploadUrl" . "$backupFN" . ".backup")
 	/tool fetch url="$backupurl" src-path="$fn" user="$BackupUploadUser" password="$BackupUploadPassword"  upload=yes
 
-        :local fn  ("$backupFN" . ".rsc")
-	:local backupurl ($BackupUploadUrl . $fn)
+        :local fn  ("$backupFullFN" . ".rsc")
+	:local backupurl ("$BackupUploadUrl" . "$backupFN" . ".rsc")
 	/tool fetch url="$backupurl" src-path="$fn" user="$BackupUploadUser" password="$BackupUploadPassword"  upload=yes
 
 }
