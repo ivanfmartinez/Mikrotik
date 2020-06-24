@@ -32,8 +32,6 @@ if ([:len $BkExportOptions] = 0) do={
 :local backupId [$SafeFileName ([/system identity get name] . "-" . [/system resource get version ] . "-" . [$ISODateTime] . "-" . [/system clock get time-zone-name ]) ]
 :local backupFN ( "bk-" . "$backupId" )
 :local backupFullFN [$FlashPrefix ("$backupFN") ]
-:put $backupFN
-:put $backupFullFN
 
 [$RemoveOldFiles "bk-*" $BkMaxFiles]
 
