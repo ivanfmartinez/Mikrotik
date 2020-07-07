@@ -115,7 +115,7 @@ if [ "$1" != "" ]
 then
 	mk_add_scripts "" $*
 else
-	# In v6.47 routeros is not respecting the dont-require-permissions=yes and ftp permission is required for backup
+	# ftp permission is required for export but not for backup
 	mk_add_script "policy=read,write,sensitive,test,password,policy,ftp dont-require-permissions=yes" IFMMkBackup scripts/IFMMkBackup 1 1 
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMMkStats scripts/IFMMkStats 1 1 
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckNetwatch scripts/IFMCheckNetwatch 0 1

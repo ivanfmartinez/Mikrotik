@@ -37,7 +37,7 @@ if ([:len $BkExportOptions] = 0) do={
 
 /system backup save name="$backupFullFN"
 # To use dynamic parameters must use :execute , but its not working on some devices and does not give error message
-# And v6.47 are not executing export command with "not enough permissions" error
+# The backup does not check for permissions, but export requires it in v6.47
 # using the on-error the script will continue if export does not work
 :do {
 	if ("$BkExportOptions" = "hide-sensitive") do={
