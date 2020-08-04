@@ -168,7 +168,7 @@ cat >> $FUNCTIONS_FILE <<__EOF__
 
 __EOF__
 
-mk_add_script 'policy=read,write,test dont-require-permissions=yes' IFMMkFunctions $FUNCTIONS_FILE 0
+mk_add_script 'policy=read,write,test,policy dont-require-permissions=yes' IFMMkFunctions $FUNCTIONS_FILE 0
 
 cat <<__EOF__
 
