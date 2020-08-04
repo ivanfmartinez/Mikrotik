@@ -1,0 +1,110 @@
+#
+#  Update dynamic DNS hostname with current IP of interface
+#  Also update static dns name and ipsec policy
+#
+
+:global UpdateDynDNSV6 do={
+
+	# Define User Variables
+	:local ddnsuser $1
+	:local ddnspass $2
+	:local ddnshost $3
+	:local ddnsinterface $4
+	:local poolname $5
+	:local serverurl $6
+	:local resolveserver $6
+	:local forceddnsupdate $8
+	:local addresslist $9
+
+
+	#define local variables
+	:local ddnsip
+	:local resolveip
+
+	#define global variables
+	:global ddnsv6lastiparr
+
+
+	# Grab the current IP address on that interface, it came as IP/PREFIX.
+	# came from a pool
+	if ( "$ddnsinterface" = "POOL") do={
+	     :set ddnsip [/ipv6 pool get $poolname prefix]
+	     :set ddnsinterface "POOL-$poolname" 
+	} else={
+	     :set ddnsip [ /ipv6 address get [/ipv6 address find interface=$ddnsinterface global invalid=no from-pool="$poolname" disabled=no] address ]
+	}
+	:put ("Interface address " . $ddnsip . " " . $ddnsinterface)
+
+
+	:if ([ :typeof $ddnsv6lastiparr ] != "array" ) do={ :set ddnsv6lastiparr ({}) }
+	:local ddnsv6lastip ($ddnsv6lastiparr->"$ddnsinterface")
+	:if ([ :typeof $ddnsv6lastip ] = nil ) do={ :set ddnsv6lastip "0.0.0.0" }
+	:if ([ :len "$ddnsv6lastip" ] = 0 ) do={ :set ddnsv6lastip "0.0.0.1" }
+	:put "DDNS Last IP : |$ddnsv6lastip|"
+
+	:if ($forceddnsupdate = 1) do={
+	   :set resolveip "0.0.0.0"
+	} else={
+	# Check for current ip in DNS
+	   :do {
+	#TODO aqui deveria pegar pelo hostname
+	      :set resolveip [/resolve server=$resolveserver $ddnshost ]
+	   } on-error= { :set resolveip "Unable to resolve $ddnshost" };
+	}
+	:put ("Resolve IP |$resolveip|$ddnshost")
+
+
+	# Did we get an IP address to compare?
+	:if ([ :typeof $ddnsip ] = nil ) do={
+	   :log info ("DynDNS: No ip address present on " . $ddnsinterface . ", please check.")
+	} else={
+
+	#
+	# Search for routes with comment "DST-POOL,$poolname" and change the destination adddress
+	#
+	  :local routes 
+	  :foreach route in [/ipv6 route find comment ~ "^DST-POOL,$poolname" disabled=no] do={
+	      :local routedst [/ipv6 route get $route dst-address]
+	      if ( "$routedst" != "$ddnsip") do={
+		  /ipv6 route set $route dst-address=$ddnsip
+	      }
+	  }
+
+	#remove prefix
+	  :set ddnsip [:pick "$ddnsip" 0 [:find "$ddnsip" "/"] ]
+
+	:put ("Interface IP |" . $ddnsip . "|")
+
+# Update static localname if defined
+#  /ip dns static;
+#  :foreach di in [find name="$ddnshost" ] do={
+#    :if ([get $di address] != $ddnsip) do={
+#       /ip dns static set $di address=$ddnsip
+#    }
+#  }
+
+	  :if (($ddnsip != $resolveip) || ($ddnsip != $ddnsv6lastip) ) do={
+	    :log info "DynDNS: Sending UPDATE! IP=$ddnsip LAST=$ddnsv6lastip RESOLVE=$resolveip $ddnshost"
+	    :put      "DynDNS: Sending UPDATE! IP=$ddnsip LAST=$ddnsv6lastip RESOLVE=$resolveip $ddnshost"
+	    :local str ( serverurl . "?hostname=$ddnshost&myip=$ddnsip&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG")
+
+	    :put  "$str"
+
+	    :local ddnssystem ("mt-" . [/system package get system version] )
+
+	    :if ("$addresslist" != "") do={
+		    :do {
+                         :local comment ("$ddnsinterface   " . [/system clock get date])
+			 /ipv6 firewall address-list add list=$addresslist address="$ddnsip/64"  comment="$comment" 
+		    } on-error={ :put "address already on list $addresslist" }
+            }
+
+	    :local result [/tool fetch url="$str" user=$ddnsuser password=$ddnspass as-value output=user]
+	    :put $result
+	    :delay 1
+	    :set ($ddnsv6lastiparr->"$ddnsinterface") "$ddnsip" 
+	  }
+
+	}
+
+}
