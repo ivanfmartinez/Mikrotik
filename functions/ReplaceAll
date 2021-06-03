@@ -9,8 +9,9 @@
         :local old $2;
         :local new $3;
 
-        :while ([:find $tmp $old -1] > 0) do={         
-                :set tmp ([:pick $tmp 0 [:find $tmp $old -1]] . $new . [:pick $tmp ([:find $tmp $old -1] + 1) [:len $tmp ] ]) ;
+        :while ([:find $tmp $old -1] >= 0) do={         
+		:local pos [:find $tmp $old -1]
+                :set tmp ([:pick $tmp 0 $pos] . $new . [:pick $tmp ($pos + 1) [:len $tmp ] ]) ;
         }
 
         :return $tmp;
