@@ -5,8 +5,30 @@
 ##         be compared using the '<' operator.
 /system script environment remove [ find where name="SortList" ];
 
+
+:global CompareStrings do={
+	:local asciiChars " !\"\23\$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+	:local i 0
+	:while ($i < [:len $1] && $i < [:len $2]) do={
+		:local c1 [:find $asciiChars [:pick $1 $i]]
+		:local c2 [:find $asciiChars [:pick $2 $i]]
+		:local dif ($c1 - $c2)
+		if ($dif != 0) do={
+			:return $dif
+		}
+		:set i ($i + 1)
+	}
+	:local dif ([:len $1] - [:len $2])
+	:return $dif
+}
+
+
 :global SortListCompareValues do={
-    return ($1 < $2);
+    if ([:typeof $1] = "str" or [:typeof $2] = "str") do={
+	:return ([$CompareStrings $1 $2] < 0)
+    } else={
+	    :return ($1 < $2);
+    }
 }
 
 :global SortList do={
@@ -16,7 +38,7 @@
   :local out [:toarray $1];
   :local l [:len $out];
 
-  :if ($l>1) do={
+  :if ($l > 1) do={
     ## Split the list in two, recursively sort, then merge results
 
     ## Pick split point index:
@@ -32,14 +54,14 @@
     :local s 0;       ## Use $s as index into array $b
     :foreach i in=$a do={
       :local j [:pick $b $s];
-      :while ($s<$l && [$SortListCompareValues $j $i]) do={
+      :while ($s <$l && [$SortListCompareValues $j $i]) do={
         :set out ($out,$j);
         :set s ($s+1);
         :set j [:pick $b $s];
       };
       :set out ($out,$i);
     };
-    :while ($s<$l) do={
+    :while ($s < $l) do={
       :set out ($out,[:pick $b $s]);
       :set s ($s+1);
     };
