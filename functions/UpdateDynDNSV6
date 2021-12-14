@@ -49,7 +49,11 @@
 	   :do {
 	#TODO aqui deveria pegar pelo hostname
 	      :set resolveip [/resolve server=$resolveserver $ddnshost ]
-	   } on-error= { :set resolveip "Unable to resolve $ddnshost" };
+	   } on-error={ 
+              :do {
+                   :set resolveip [:resolve $ddnshost ]
+              } on-error={ :set resolveip "Unable to resolve $ddnshost" };
+           }
 	}
 	:put ("Resolve IP |$resolveip|$ddnshost")
 
