@@ -31,7 +31,9 @@
 	     :set ddnsip [/ipv6 pool get $poolname prefix]
 	     :set ddnsinterface "POOL-$poolname" 
 	} else={
-	     :set ddnsip [ /ipv6 address get [/ipv6 address find interface=$ddnsinterface global invalid=no from-pool="$poolname" disabled=no] address ]
+             :do {
+                 :set ddnsip [ /ipv6 address get [/ipv6 address find interface=$ddnsinterface global invalid=no from-pool="$poolname" disabled=no] address ]
+             } on-error={ :put ("No ip found for interface $ddnsinterface") }
 	}
 	:put ("Interface address " . $ddnsip . " " . $ddnsinterface)
 
