@@ -95,8 +95,8 @@
 	    :local str ( serverurl . "?hostname=$ddnshost&myip=$ddnsip&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG")
 
 	    :put  "$str"
-
-	    :local ddnssystem ("mt-" . [/system package get system version] )
+            # On routerOS 7 package is routeros instead of system
+	    #:local ddnssystem ("mt-" . [/system package get system version] )
 
 	    :if ("$addresslist" != "") do={
 		    :do {
