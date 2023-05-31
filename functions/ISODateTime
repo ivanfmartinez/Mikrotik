@@ -1,11 +1,15 @@
 # Return the current date in ISO format (without time-zone)
 # or the specified date/time
+# https://xkcd.com/1179/
 #
 :global ISODateTime do={
 
         :local date
         :local time
 	:local dtISO
+        :local year
+        :local month
+        :local day
         :if ([:len "$1"] < 11) do={
                 :set date [/system clock get date ];
                 :set time [/system clock get time ];
@@ -16,19 +20,28 @@
                 :set time [:pick "$1" ($p1+1) ($p1 + 9)];
         }
 
+        # RouterOS 7.10 return date as ISO yyyy-mm-dd, previous as mmm/dd/yyyy
 	# mar/13/2017
-	:local day [:pick $date 4 6 ];
-	:local month [:pick $date 0 3 ];
-	:local year [:pick $date 7 11 ];
+        :local sep [:pick $date 3 4 ]
+        if ("$sep" = "/") do={
+		:set day [:pick $date 4 6 ];
+		:local m [:pick $date 0 3 ];
+		:set year [:pick $date 7 11 ];
+		:local months [:toarray "jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec"];
+		:set month [:pick ( ( [:find $months $m -1 ] + 101) . "") 1 3]
+        } else={
+        # 2023-05-31
+		:set day [:pick $date 8 10 ];
+		:set month [:pick $date 5 7 ];
+		:set year [:pick $date 0 4 ];
+        }
 	#
-	:local months [:toarray "jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec"];
-	:local m [:pick ( ( [:find $months $month -1 ] + 101) . "") 1 3]
 	#
 
 	if ([:len "$time"] > 0) do={
-		:set dtISO  ($year . "-" . $m . "-" . $day . "T" . $time);
+		:set dtISO  ($year . "-" . $month . "-" . $day . "T" . $time);
 	} else={
-		:set dtISO  ($year . "-" . $m . "-" . $day );
+		:set dtISO  ($year . "-" . $month . "-" . $day );
 	}
 
 	:return $dtISO;
