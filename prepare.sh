@@ -133,7 +133,7 @@ fi
 cd $FUNCTIONS_DIR
 if [ $ALL_FUNCTIONS -eq 1 ]
 then
-	ls -1  > $FUNCTION_LIST
+	ls -1  | grep -v ".*[~]\$" > $FUNCTION_LIST
 fi
 HASH=$(sort $FUNCTION_LIST | grep -E -i "^[a-z0-9]+\$" | uniq | xargs cat | sha1sum | awk '{print $1}')
 cd ..
