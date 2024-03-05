@@ -1,0 +1,96 @@
+# For use with multiple gateways
+#
+# Check default routes with distance < 50 change distance adding 200 when not working
+# 
+#
+#
+
+
+# Para facilitar os comandos vai para o caminho de rotas
+/ip/route
+
+
+:local PingTest do={
+   :local pingSource $1
+   :local pingDest $2
+
+   :if ([:len "$pingDest"] > 0) do={
+# Precisa de pelo menos 2 para ter resposta consistente, se colocar 1 nao vem um array de uma posicao mas o valor da resposta
+      :local tmp [/ping address=$pingDest src-address=$pingSource as-value count=2]
+      :foreach p in $tmp do={
+          :if ($p->"ttl" > 0) do={
+              :return 1
+          }
+      }
+   }
+   :put "Ping Error $pingDest from $pingSource"
+   :return 0
+}
+
+# Nao precisa de active=yes para estar ativa...
+:foreach route in=[find where dst-address=0.0.0.0/0 inactive=no disabled=no dynamic=no check-gateway=ping routing-table=main] do={
+   :local distance [get $route distance]
+   :local gateway [get $route gateway]
+   :local table [get $route routing-table]
+   :local comment [get $route comment]
+#   :put "$route $address $distance $gateway $iface $table |$comment|"
+
+   :local iface ""
+   :do {
+       # Pode ter o mesmo endereço em mais de uma interface, acontece quando tem vrrp
+       # como tem check-gateway=ping se deveria estar na tabela de ping ou a rota seria invalida
+       :local tmp  [ /ip/arp/find where address=$gateway complete=yes] 
+#      :put "$tmp"
+#      :put [:pick $tmp 0 1 ]
+       :set iface [/ip/arp/get [ :pick $tmp 0 1 ] interface]
+   } on-error={ :put "error getting interface name for gateway $gateway" }
+
+   :local address "0.0.0.0"
+   :do {
+       # Se tiver mais de um endereço pega o primeiro
+       :set address [/ip/address/get [:pick [/ip/address/find where interface=$iface disabled=no] 0] address]
+       # Removendo rede ex "/24"
+       :set address [:pick "$address" 0 [:find "$address" "/"]]
+#      :put "$route $address $distance $gateway $iface $table |$comment|"
+   } on-error={ :put "error getting address for interface $iface" }
+
+   :local ips [/ip/firewall/address-list find where list=LINK_TEST_IPS disabled=no]
+   :local qtde [:len [/ip/firewall/address-list find where list=LINK_TEST_IPS disabled=no]]
+   :local metade ($qtde / 2)
+   :local ok 0
+   :foreach testip in $ips do={
+       :local ipaddr [/ip/firewall/address-list get $testip address]
+       :if ([$PingTest $address $ipaddr ] > 0) do={
+           :set ok ($ok + 1)
+       }
+   }
+#  :put "$iface - $gateway - $address - ok=$ok qtde=$qtde metade=$metade "
+# Considera que link esta ok se pelo menos metade dos testes for ok
+   :local status 1
+   :if ($ok < $metade) do={
+       :set status 0
+   }
+
+
+# Distancia tem que ser até 255 entao só ajusta rotas que tenham valor de referencia  < 50 
+# Assim valores < 50 sao ativas > 200 inativas e quando decrementar vão ficar abaixo de 50
+   :local msg ""
+   :if (($status = 0) && ($distance < 50)) do={
+       :set distance (distance + 200)
+       set $route distance=$distance
+       :set msg ( [/system/identity/get name] . " - alterando distancia $iface - $gateway - $distance - ok=$ok - sem conexao")
+   }
+
+   :if (($status = 1) && ($distance > 200)) do={
+       :set distance (distance - 200)
+       set $route distance=$distance
+       :set msg ( [/system/identity/get name] . " - alterando distancia $iface - $gateway - $distance - ok=$ok - conexao ok")
+   }
+
+   :if ([:len "$msg"] > 0) do={
+       :log info message="$msg"
+       /iot/mqtt/publish broker=mqtt topic="/aviso/telegram/links@avisos" message="$msg"
+   }
+
+}
+

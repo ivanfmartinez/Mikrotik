@@ -13,6 +13,7 @@
         :local host $1
         :local count $2
         :local splitCount $3
+        
         :while ($count > 0) do={
              :set count ($count - $splitCount)
              :local cnt [/ping address=$host count=$splitCount]

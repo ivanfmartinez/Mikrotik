@@ -87,12 +87,16 @@
 	  :if ( ($ddnsip != $resolveip) || ($ddnsip != $ddnslastip) ) do={
 	    :log info "DynDNS: $ddnshost Sending UPDATE! IP=$ddnsip LAST=$ddnslastip RESOLVE=$resolveip"
 	    :put  "DynDNS: Sending UPDATE! IP=$ddnsip LAST=$ddnslastip RESOLVE=$resolveip $ddnshost"
+
 	    :local str ( serverurl . "?hostname=$ddnshost&myip=$ddnsip&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG")
-	#   :local ddnssystem ("mt-" . [/system package get system version] )
+	    #:local ddnssystem ("routeros-" . [/system package get routeros version] )
+
 	    :local result [/tool fetch url="$str" src-address=$srcaddress user=$ddnsuser password=$ddnspass as-value output=user]
+
+	    :delay 1
 	    :put $result
 	    :log info "DynDNS: $ddnshost $result"
-	    :delay 1
+
 	    :set ($ddnslastiparr->"$ddnsinterface") "$ddnsip" 
 	 }
 	}

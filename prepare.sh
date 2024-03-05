@@ -8,6 +8,7 @@ ALL_FUNCTIONS=0
 DEFS_OVERRIDE=${DEFS_OVERRIDE:-0}
 FUNCTIONS_FILE="/tmp/ifm.mk.functions.$$"
 RM_FUNCTIONS_FILE=1
+VERSION=${MK_VERSION:-6}
 while [ "$1" != "" ]
 do
 	if [ "$1" = "-all" ]
@@ -24,20 +25,17 @@ done
 
 FUNCTIONS_DIR="functions"
 TMP_FUNCTIONS_DIR="/tmp/ifm.mk.functions.d.$$"
-#TODO accept extra functions directories....
-if [ "$EXTRA_FUNCTIONS_DIRS" != "" ]
-then
-	rm -Rf $TMP_FUNCTIONS_DIR
-	mkdir -p $TMP_FUNCTIONS_DIR
-	for dir in $FUNCTIONS_DIR $EXTRA_FUNCTIONS_DIRS
-	do
-		if [ -d $dir ]
-		then
-			cp $dir/* $TMP_FUNCTIONS_DIR
-		fi
-	done
-	FUNCTIONS_DIR=$TMP_FUNCTIONS_DIR
-fi
+
+rm -Rf $TMP_FUNCTIONS_DIR
+mkdir -p $TMP_FUNCTIONS_DIR
+for dir in ${FUNCTIONS_DIR} ${FUNCTIONS_DIR}_V${VERSION} ${EXTRA_FUNCTIONS_DIRS}
+do
+	if [ -d $dir ]
+	then
+		cp $dir/* $TMP_FUNCTIONS_DIR
+	fi
+done
+FUNCTIONS_DIR=${TMP_FUNCTIONS_DIR}
 
 FUNCTION_LIST="/tmp/ifm.mk.functions_list.$$"
 rm -f $FUNCTION_LIST $FUNCTIONS_FILE
@@ -49,6 +47,7 @@ function mk_add_script() {
 	local FILE="$3"
 	local EXEC_FUNCTIONS="$4"
 	local OVERRIDE="$5"
+
 	if [ -f "${FILE}" ]
 	then
 		echo ""
@@ -70,7 +69,7 @@ function mk_add_script() {
 		then
 			grep "^##USE_FUNCTION" "${FILE}" | cut -f 2 -d " " >> $FUNCTION_LIST
 		fi
-		cat "${FILE}" | sed -e 's/\(["\$?]\)/\\\1/g' | sed -e 's/$/\\n/' | sed -e 's/##USE_FUNCTION/:global/' | tr -d '\n'
+		cat "${FILE}" | sed -e 's/\(["\$?]\)/\\\1/g' | sed -e 's/##USE_FUNCTION/:global/' | sed -e 's/$/\\n/' | tr -d '\n'
 		echo "\""	
 	fi
 }
@@ -122,6 +121,10 @@ else
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMCheckLoginFailures scripts/IFMCheckLoginFailures 0 1
 	# IFMMkDefs will have definitions which will persist on reboots
 	mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" IFMMkDefs scripts/IFMMkDefs 0 $DEFS_OVERRIDE
+	if [ $MK_VERSION -eq 7 ]
+	then
+            mk_add_script "policy=read,write,sensitive,test,password,policy dont-require-permissions=yes" CheckGateways scripts_V7/CheckGateways 0 1
+	fi
 fi
 
 
@@ -133,7 +136,7 @@ fi
 cd $FUNCTIONS_DIR
 if [ $ALL_FUNCTIONS -eq 1 ]
 then
-	ls -1  | grep -v ".*[~]\$" > $FUNCTION_LIST
+	ls -1  | grep -v -E ".*(~|.ignore|.bak)\$" > $FUNCTION_LIST
 fi
 HASH=$(sort $FUNCTION_LIST | grep -E -i "^[a-z0-9]+\$" | uniq | xargs cat | sha1sum | awk '{print $1}')
 cd ..

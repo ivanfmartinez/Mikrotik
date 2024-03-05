@@ -35,15 +35,31 @@ if ([:len $BkExportOptions] = 0) do={
 
 [$RemoveOldFiles "bk-*" $BkMaxFiles]
 
+:local freeSpace [/system resource get free-hdd-space ]
+# Some routers use use more than 200k only for the backup
+:local requiredSpace ( 300 * 1024 )
+if ( $freeSpace <= $requiredSpace ) do={
+    # try to keep minimum versions to create new backup
+    :log error "Not enough space for backup free=$freeSpace required=$requiredSpace, removing old versions"
+    [$RemoveOldFiles "bk-*" 2]
+    :set freeSpace [/system resource get free-hdd-space ]
+    if ( $freeSpace <= $requiredSpace ) do={
+        :local errorMsg "No space available for backup : free=$freeSpace required=$requiredSpace"
+        :log error "$errorMsg"
+        :return "$errorMsg"
+    }
+}
+
 /system backup save name="$backupFullFN"
 # To use dynamic parameters must use :execute , but its not working on some devices and does not give error message
 # The backup does not check for permissions, but export requires it in v6.47
 # using the on-error the script will continue if export does not work
 :do {
+        # terse create export without line breaks
 	if ("$BkExportOptions" = "hide-sensitive") do={
-		/export hide-sensitive file="$backupFullFN"
+		/export hide-sensitive terse file="$backupFullFN"
 	} else={
-		:execute "/export $BkExportOptions file=\"$backupFullFN\"" 
+		:execute "/export $BkExportOptions terse file=\"$backupFullFN\"" 
 	}
 } on-error={ :put "Error executing export command" }
 # Wait for backup finish as it appers to run in background in some devices...
