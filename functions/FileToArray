@@ -42,5 +42,5 @@
               :set lines ($lines, $line)
           }
       } 
-      return $lines
+      :return $lines
 }
